@@ -1,0 +1,111 @@
+name:                firebase 
+version:             0.0.1
+synopsis:            Google Firebase Database API
+homepage:            https://github.com/nghamilton/firebase 
+license:             BSD3
+license-file:        LICENSE
+author:              Nick Hamilton
+maintainer:          projects@nickhamilton.ninja 
+category:            Web 
+build-type:          Simple
+extra-source-files:  ChangeLog.md
+cabal-version:       >=1.10
+
+executable paynowserver
+  default-extensions:  OverloadedStrings
+                     , DuplicateRecordFields
+  main-is:             Main.hs
+  other-modules:       Firebase,Util,FirebaseEvents,FirebaseTypes,FirebaseAuth
+  build-depends:       base >=4.8 && <5
+                     , hspec >= 1.8
+                     , QuickCheck
+                     , generic-random
+                     , servant >=0.10
+                     , servant-client >=0.10
+                     , servant-server >=0.10
+                     , http-streams >= 0.8.5.3
+                     , io-streams >= 1.4.0.0 && < 1.5
+                     , http-client
+                     , http-client-tls
+                     , HsOpenSSL
+                     , SHA
+                     , uuid
+                     , hashids
+                     , wai
+                     , http-types
+                     , warp
+                     , aeson
+                     , attoparsec
+                     , unordered-containers
+                     , directory
+                     , text
+                     , bytestring
+                     , text-show
+                     , string-conversions
+                     , firebase
+                     , lens
+                     , mtl
+                     , nano-http
+                     , time 
+                     , data-default
+                     , MissingH
+                     , split
+                     , safe
+                     , either
+  hs-source-dirs:      src,test
+  default-language:    Haskell2010
+
+test-suite tests
+  default-extensions:  OverloadedStrings
+                     , DuplicateRecordFields
+  ghc-options:         -fhpc
+  type:                exitcode-stdio-1.0
+  main-is:             Spec.hs
+  hs-source-dirs:      src,test
+  other-modules:       MainSpec 
+  build-depends:       base >= 4.8 && < 5
+                     , hspec >= 1.8
+                     , QuickCheck
+                     , generic-random
+                     , servant >=0.10
+                     , servant-client >=0.10
+                     , servant-server >=0.10
+                     , http-streams >= 0.8.5.3
+                     , io-streams >= 1.4.0.0 && < 1.5
+                     , http-client
+                     , http-client-tls
+                     , HsOpenSSL
+                     , SHA
+                     , uuid
+                     , hashids
+                     , wai
+                     , http-types
+                     , warp
+                     , aeson
+                     , attoparsec
+                     , unordered-containers
+                     , directory
+                     , text
+                     , bytestring
+                     , text-show
+                     , string-conversions
+                     , firebase
+                     , lens
+                     , mtl
+                     , nano-http
+                     , time 
+                     , data-default
+                     , MissingH
+                     , split
+                     , safe
+                     , either
+  default-language:    Haskell2010
+
+benchmark criterion
+  default-extensions:  OverloadedStrings
+  type:                exitcode-stdio-1.0
+  main-is:             Bench.hs
+  hs-source-dirs:      src,test,benchmark
+  build-depends:       base >= 4.8 && < 5
+                     , criterion
+  default-language:    Haskell2010

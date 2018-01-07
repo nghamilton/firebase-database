@@ -1,0 +1,10 @@
+dist
+.hscope
+install-sandbox/
+cabal.sandbox.config
+.hpc
+.codex.tags
+profile.log
+*.tags
+test-firebase-data.json
+firebase_test_stream_qr.data
