@@ -11,9 +11,9 @@ let
       };
   };
   nano-http = noHaddock (haskellPackages'.callPackage ./nano-http.nix {});
-  firebase = noCheck (noHaddock (haskellPackages'.callPackage ./firebase-collegevine.nix {nano-http=nano-http;}));
+  firebase-collegevine = noCheck (noHaddock (haskellPackages'.callPackage ./firebase-collegevine.nix {nano-http=nano-http;}));
 in
   haskellPackages'.callPackage ./firebase.nix {
-  firebase = firebase;
+  firebase-collegevine = firebase-collegevine;
   nano-http = nano-http;
 }

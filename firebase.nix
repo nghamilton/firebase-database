@@ -1,5 +1,5 @@
 { mkDerivation, aeson, attoparsec, base, bytestring, criterion
-, data-default, directory, either, firebase, generic-random
+, data-default, directory, either, firebase-collegevine, generic-random
 , hashids, HsOpenSSL, hspec, http-client, http-client-tls
 , http-streams, http-types, io-streams, lens, MissingH, mtl
 , nano-http, QuickCheck, safe, servant, servant-client
@@ -14,7 +14,7 @@ mkDerivation {
   isExecutable = true;
   executableHaskellDepends = [
     aeson attoparsec base bytestring data-default directory either
-    firebase generic-random hashids HsOpenSSL hspec http-client
+    firebase-collegevine generic-random hashids HsOpenSSL hspec http-client
     http-client-tls http-streams http-types io-streams lens MissingH
     mtl nano-http QuickCheck safe servant servant-client servant-server
     SHA split string-conversions text text-show time
@@ -22,7 +22,7 @@ mkDerivation {
   ];
   testHaskellDepends = [
     aeson attoparsec base bytestring data-default directory either
-    firebase generic-random hashids HsOpenSSL hspec http-client
+    firebase-collegevine generic-random hashids HsOpenSSL hspec http-client
     http-client-tls http-streams http-types io-streams lens MissingH
     mtl nano-http QuickCheck safe servant servant-client servant-server
     SHA split string-conversions text text-show time

@@ -11,10 +11,9 @@ build-type:          Simple
 extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
-executable paynowserver
+library
   default-extensions:  OverloadedStrings
                      , DuplicateRecordFields
-  main-is:             Main.hs
   other-modules:       Firebase,Util,FirebaseEvents,FirebaseTypes,FirebaseAuth
   build-depends:       base >=4.8 && <5
                      , hspec >= 1.8
@@ -42,7 +41,7 @@ executable paynowserver
                      , bytestring
                      , text-show
                      , string-conversions
-                     , firebase
+                     , firebase-collegevine
                      , lens
                      , mtl
                      , nano-http
@@ -89,7 +88,7 @@ test-suite tests
                      , bytestring
                      , text-show
                      , string-conversions
-                     , firebase
+                     , firebase-collegevine
                      , lens
                      , mtl
                      , nano-http

@@ -2,7 +2,7 @@
 , mtl, nano-http, stdenv, text
 }:
 mkDerivation {
-  pname = "firebase";
+  pname = "firebase-collegevine";
   version = "0.2.0";
   src = fetchgit {
     url = "https://github.com/collegevine/firebase.git";
