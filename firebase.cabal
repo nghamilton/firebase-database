@@ -14,7 +14,7 @@ cabal-version:       >=1.10
 library
   default-extensions:  OverloadedStrings
                      , DuplicateRecordFields
-  other-modules:       Firebase,Util,FirebaseEvents,FirebaseTypes,FirebaseAuth
+  other-modules:       Network.Google.Firebase,Network.Google.Firebase.Util,Network.Google.Firebase.Events,Network.Google.Firebase.Types
   build-depends:       base >=4.8 && <5
                      , hspec >= 1.8
                      , QuickCheck
@@ -41,7 +41,6 @@ library
                      , bytestring
                      , text-show
                      , string-conversions
-                     , firebase-collegevine
                      , lens
                      , mtl
                      , nano-http
@@ -88,7 +87,6 @@ test-suite tests
                      , bytestring
                      , text-show
                      , string-conversions
-                     , firebase-collegevine
                      , lens
                      , mtl
                      , nano-http
