@@ -93,7 +93,7 @@ transformStream
   => InputStream ByteString -> m (InputStream (Event t))
 transformStream i =
   liftIO $ bytesToStreamEvents i >>= streamEventsToDataEvents >>= Streams.concatLists >>=
-  _ fetchUpdates
+  Streams.mapM fetchUpdates
 
 logStreamData :: InputStream ByteString -> IO ()
 logStreamData i = Streams.peek i >>= (maybe (return ()) BSC.putStrLn)
