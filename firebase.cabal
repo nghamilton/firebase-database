@@ -14,7 +14,8 @@ cabal-version:       >=1.10
 library
   default-extensions:  OverloadedStrings
                      , DuplicateRecordFields
-  other-modules:       Network.Google.Firebase,Network.Google.Firebase.Util,Network.Google.Firebase.Events,Network.Google.Firebase.Types
+  exposed-modules:     Network.Google.Firebase,Network.Google.Firebase.Events
+  other-modules:       Network.Google.Firebase.Util,Network.Google.Firebase.Types
   ghc-options:         -Wall
   build-depends:       base >=4.8 && <5
                      , hspec >= 1.8
