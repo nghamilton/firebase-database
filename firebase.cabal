@@ -15,41 +15,28 @@ library
   default-extensions:  OverloadedStrings
                      , DuplicateRecordFields
   other-modules:       Network.Google.Firebase,Network.Google.Firebase.Util,Network.Google.Firebase.Events,Network.Google.Firebase.Types
+  ghc-options:         -Wall
   build-depends:       base >=4.8 && <5
                      , hspec >= 1.8
                      , QuickCheck
                      , generic-random
-                     , servant >=0.10
-                     , servant-client >=0.10
-                     , servant-server >=0.10
                      , http-streams >= 0.8.5.3
                      , io-streams >= 1.4.0.0 && < 1.5
                      , http-client
                      , http-client-tls
                      , HsOpenSSL
-                     , SHA
-                     , uuid
-                     , hashids
-                     , wai
                      , http-types
-                     , warp
                      , aeson
                      , attoparsec
-                     , unordered-containers
-                     , directory
                      , text
                      , bytestring
-                     , text-show
                      , string-conversions
+                     , unordered-containers
                      , lens
                      , mtl
                      , nano-http
-                     , time 
-                     , data-default
-                     , MissingH
+                     , time
                      , split
-                     , safe
-                     , either
   hs-source-dirs:      src,test
   default-language:    Haskell2010
 
@@ -65,20 +52,13 @@ test-suite tests
                      , hspec >= 1.8
                      , QuickCheck
                      , generic-random
-                     , servant >=0.10
-                     , servant-client >=0.10
-                     , servant-server >=0.10
-                     , http-streams >= 0.8.5.3
-                     , io-streams >= 1.4.0.0 && < 1.5
                      , http-client
                      , http-client-tls
                      , HsOpenSSL
                      , SHA
                      , uuid
                      , hashids
-                     , wai
                      , http-types
-                     , warp
                      , aeson
                      , attoparsec
                      , unordered-containers

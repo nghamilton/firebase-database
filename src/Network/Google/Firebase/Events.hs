@@ -7,30 +7,24 @@ module Network.Google.Firebase.Events where
 import Network.Google.Firebase as FB
 import Network.Google.Firebase.Types
 import Network.Google.Firebase.Util
-import Network.Google.Firebase.Settings
 
 import Control.Lens.Lens
 import System.IO.Streams.Attoparsec.ByteString
 import Control.Applicative
+import Data.ByteString
 import qualified Data.Attoparsec.ByteString.Char8 as AC
 import qualified Data.Attoparsec.ByteString as AB
 import Data.ByteString.Char8 as BSC (putStrLn)
-import Data.ByteString as S (ByteString, putStrLn)
-import Data.Text as T
 import System.IO.Streams as Streams
 import Control.Monad as M
-import GHC.Generics
 import Data.Aeson
 import Data.String.Conversions
-import Control.Applicative as Ap
 import Data.Maybe
 import qualified Data.List as L hiding (lookup)
 import Network.Http.Client hiding (PUT, PATCH, DELETE)
 import Network.HTTP.Nano as Nano hiding (http, GET, PUT, PATCH)
 import OpenSSL
 import Control.Concurrent
-import Control.Monad
-import System.IO
 import qualified Data.HashMap.Lazy as HM
 import Data.List.Split
 import Control.Monad.Except
@@ -39,8 +33,8 @@ import Control.Monad.Reader
 -- connect to firebase server over https, and convert the event-stream to a Stream, saving it in the state
 listen
   :: FirebaseData t
-  => String -> String -> FireState t -> IO ()
-listen tok loc' st =
+  => String -> String -> String -> FireState t -> IO ()
+listen fbServer fbDataKey loc' st =
   withOpenSSL $
   do ctx <- baselineContextSSL
      let loc = loc' ++ ".json?auth="
@@ -54,12 +48,12 @@ listen tok loc' st =
           sendRequest c q emptyBody
           receiveResponse
             c
-            (\p stream
+            (\_ stream
                 -- transform the stream into a stream of our desired FirebaseData type, and read an event
               -> do
                stream' <- transformStream stream
                -- fetch data for any UPDATE events in the stream and save to the state
-               Streams.mapM (\t -> runF tok (fetchUpdates loc t)) stream'
+               Streams.mapM_ (\t -> runF fbServer fbDataKey (fetchUpdates loc t)) stream'
                let loop = do
                      mEvnt :: Maybe (Event t) <- Streams.read stream'
                      case mEvnt of
@@ -77,14 +71,14 @@ listen tok loc' st =
                loop))
      logW "Firebase connection closed."
 
-runF :: String -> FirebaseM t -> IO (Either Nano.HttpError t)
-runF tok a = do
-  env <- fbEnv tok
+runF :: String -> String -> FirebaseM t -> IO (Either Nano.HttpError t)
+runF url tok a = do
+  env <- fbEnv url tok
   runExceptT $ flip runReaderT env a
 
-fbEnv :: String -> IO FBEnv
-fbEnv tok = do
-  let fb = FB.Firebase tok fbDataUrl
+fbEnv :: String -> String -> IO FBEnv
+fbEnv url tok = do
+  let fb = FB.Firebase tok url
   mgr <- Nano.tlsManager
   let httpc = Nano.HttpCfg mgr
   return $ FBEnv fb httpc
@@ -124,7 +118,7 @@ updateDb (FireState m) i (Just itm) = modifyMVar_ m (return . HM.insert i itm)
 logRecordUpdate
   :: FirebaseData t
   => DataChangeType -> Maybe t -> IO ()
-logRecordUpdate action itm = logD $ cs $ show itm ++ " (" ++ show action ++ ")"
+logRecordUpdate act itm = logD $ cs $ show itm ++ " (" ++ show act ++ ")"
 
 -- run the parser over the bytestring stream from the server
 -- nb: the Stream ByteSting returns 'chunks' that appear to correspond directly to actions
@@ -157,7 +151,7 @@ streamEventsToDataEvents = Streams.map streamEventToDataEvent
 fetchUpdates
   :: (FbHttpM m e r, HasFirebase r, FirebaseData t)
   => String -> Event t -> m (Event t)
-fetchUpdates loc e@(INVALID _) = return e
+fetchUpdates _ e@(INVALID _) = return e
 fetchUpdates loc evnt =
   case action evnt of
     UPDATE -> do
@@ -179,11 +173,11 @@ streamEventToDataEvent e =
     PUT -> convertFromStreamEvent' $ streamEventData e
     PATCH -> convertFromStreamEvent' $ streamEventData e
   where
-    convertFromStreamEvent' (Right streamEventData) =
+    convertFromStreamEvent' (Right eventData) =
       convertFromStreamEvent
-        (changeAction streamEventData)
-        (changedData streamEventData) $
-      path streamEventData
+        (changeAction eventData)
+        (changedData eventData) $
+      path eventData
     convertFromStreamEvent' (Left err) =
       [ INVALID $
         "Event stream conversion of data, no event able to be produced: " <>
@@ -251,10 +245,10 @@ pStreamEvent
      FirebaseData t
   => AB.Parser (Maybe (StreamEvent t))
 pStreamEvent = do
-  AC.string "event: "
+  _ <- AC.string "event: "
   event <- pEventType
   AC.endOfLine
-  AC.string "data: "
+  _ <- AC.string "data: "
   edata <- pStreamEventData
   AC.endOfLine
   AC.endOfLine

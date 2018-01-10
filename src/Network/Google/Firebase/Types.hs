@@ -11,14 +11,11 @@
 
 module Network.Google.Firebase.Types where
 
-import Data.Aeson
 import Data.Aeson.Types
 import Network.HTTP.Nano hiding (DELETE)
 import Data.Text
-import System.Environment
-import Control.Applicative
 import Data.String.Conversions
-import GHC.Generics
+import GHC.Generics hiding (to)
 import Data.HashMap.Lazy as HashMap
 import Control.Applicative as Ap
 import Data.Maybe
@@ -31,10 +28,7 @@ import Control.Monad (mzero)
 import Control.Monad.Reader  (MonadReader)
 import Control.Monad.Except (MonadError)
 import Control.Monad.Trans (MonadIO)
-import Data.Aeson
 import qualified Data.Text.Internal as T
-
-import Debug.Trace
 
 class FirebaseContext a where
   fbCtx :: Maybe a -> Location
@@ -100,14 +94,14 @@ instance FromJSON (Event t) where
   parseJSON _ = Ap.empty
 
 instance (FirebaseData t, FirebaseContext t) => FirebaseContext (Event t) where
-  fbCtx (Just (Event {item = itm})) = fbCtx itm
-  fbCtx Nothing = "/"
+  fbCtx (Just Event {item = itm}) = fbCtx itm
+  fbCtx _ = "/"
 
 -- we need this to derive full location from an event for event data when item=Nothing::Maybe t
 instance FirebaseData t =>
          FirebaseData (Event t) where
-  getId (Just (Event {id = i})) = Just i
-  getId Nothing = Nothing
+  getId (Just Event {id = i}) = Just i
+  getId _ = Nothing
   setId a i =
     a
       { Network.Google.Firebase.Types.id = i }
@@ -129,13 +123,13 @@ pAddOne v = do
   p <- v .: "path"
   itm :: t <- v .: "data"
   -- if the parse was successful, it was a single new item added
-  return $
+  return
       StreamEventData
       { path = p
       , changedData = mkData itm
       , changeAction = ADD
       } where
-  mkData d = Just $ fromList $ L.map (\(i,d)->(cs $ fromJust i,d)) $ L.filter (\(i,_)->isJust i) [(getId (Just d), d)]
+  mkData d = Just $ fromList $ L.map (\(i,d')->(cs $ fromJust i,d')) $ L.filter (\(i,_)->isJust i) [(getId (Just d), d)]
 
 pAddAll :: FirebaseData t => Object -> Parser (StreamEventData t)
 --pAddAll v | trace (show v) False = undefined
@@ -143,10 +137,10 @@ pAddAll v = do
   p <- v .: "path"
   ds :: HashMap Location t <- v .: "data"
   -- if the parse was successful, it was multiple new data items added
-  return $
+  return
          StreamEventData
          { path = p
-         , changedData = Just $ ds
+         , changedData = Just ds
          , changeAction = ADD
          }
 
@@ -157,24 +151,24 @@ pUpdateOrDelete v = do
   mt :: Maybe Text <- v .: "data"
   -- if the parse was successful, it means it is a path to an updated field
   if isJust mt
-    then return $
+    then return
       StreamEventData
       { path = p
       , changedData = Nothing
       , changeAction = UPDATE
       }
     -- otherwise it was a 'null' in the data
-    else do
+    else
       if isFieldDelete p
          -- if the path is in the form of /x/y/ then it is a field delete in an item
          -- .... so we need to request an item update
-        then return $
+        then return
              StreamEventData
              { path = p
              , changedData = Nothing
              , changeAction = UPDATE
              }
-        else return $
+        else return
              StreamEventData
              { path = p
              , changedData = Nothing

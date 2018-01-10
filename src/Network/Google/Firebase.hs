@@ -49,9 +49,6 @@ import Network.Google.Firebase.Types hiding (PUT,DELETE)
 
 import Control.Applicative ((<$>))
 import Control.Lens (view)
-import Control.Monad.Except (MonadError)
-import Control.Monad.Reader (MonadReader)
-import Control.Monad.Trans (MonadIO)
 import Data.Aeson (FromJSON, ToJSON, encode)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
@@ -123,10 +120,3 @@ toParam :: String -> String -> String
 toParam k v = k ++ "=" ++ (B.unpack . urlEncode False $ B.pack v)
 
 ---- end (c) Ralph Morton
-
--- makeFbEnv :: String -> IO FBEnv
--- makeFbEnv tok = do
---   let fb = Firebase tok fbDataUrl
---   mgr <- tlsManager
---   let httpc = HttpCfg mgr
---   return $ FBEnv fb httpc
