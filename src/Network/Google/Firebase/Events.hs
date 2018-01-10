@@ -9,6 +9,7 @@ import Network.Google.Firebase.Types
 import Network.Google.Firebase.Util
 import Network.Google.Firebase.Settings
 
+import Control.Lens.Lens
 import System.IO.Streams.Attoparsec.ByteString
 import Control.Applicative
 import qualified Data.Attoparsec.ByteString.Char8 as AC
@@ -25,7 +26,7 @@ import Control.Applicative as Ap
 import Data.Maybe
 import qualified Data.List as L hiding (lookup)
 import Network.Http.Client hiding (PUT, PATCH, DELETE)
-import Network.HTTP.Nano hiding (http,GET,PUT,PATCH)
+import Network.HTTP.Nano as Nano hiding (http, GET, PUT, PATCH)
 import OpenSSL
 import Control.Concurrent
 import Control.Monad
@@ -37,9 +38,9 @@ import Control.Monad.Reader
 
 -- connect to firebase server over https, and convert the event-stream to a Stream, saving it in the state
 listen
-  :: (FbHttpM m e r, HasFirebase r, FirebaseData t)
-  => String -> FireState t -> m ()
-listen loc' st =
+  :: FirebaseData t
+  => String -> String -> FireState t -> IO ()
+listen tok loc' st =
   withOpenSSL $
   do ctx <- baselineContextSSL
      let loc = loc' ++ ".json?auth="
@@ -53,11 +54,13 @@ listen loc' st =
           sendRequest c q emptyBody
           receiveResponse
             c
-            (\p stream -> do
-              -- transform the stream into a stream of our desired FirebaseData type, and read an event
+            (\p stream
+                -- transform the stream into a stream of our desired FirebaseData type, and read an event
+              -> do
                stream' <- transformStream stream
-               let loop
-                    = do
+               -- fetch data for any UPDATE events in the stream and save to the state
+               Streams.mapM (\t -> runF tok (fetchUpdates loc t)) stream'
+               let loop = do
                      mEvnt :: Maybe (Event t) <- Streams.read stream'
                      case mEvnt of
                        Just (Event {action = act
@@ -74,6 +77,44 @@ listen loc' st =
                loop))
      logW "Firebase connection closed."
 
+runF :: String -> FirebaseM t -> IO (Either Nano.HttpError t)
+runF tok a = do
+  env <- fbEnv tok
+  runExceptT $ flip runReaderT env a
+
+fbEnv :: String -> IO FBEnv
+fbEnv tok = do
+  let fb = FB.Firebase tok fbDataUrl
+  mgr <- Nano.tlsManager
+  let httpc = Nano.HttpCfg mgr
+  return $ FBEnv fb httpc
+
+data FBEnv = FBEnv
+  { fbInstance :: FB.Firebase
+  , fbHttpCfg :: Nano.HttpCfg
+  }
+
+instance Nano.HasHttpCfg FBEnv where
+  httpCfg =
+    lens
+      fbHttpCfg
+      (\te h ->
+          te
+          { fbHttpCfg = h
+          })
+
+instance FB.HasFirebase FBEnv where
+  firebase =
+    lens
+      fbInstance
+      (\te f ->
+          te
+          { fbInstance = f
+          })
+
+--todo supply this to each method call, or create monad for us
+type FirebaseM = ReaderT FBEnv (ExceptT Nano.HttpError IO)
+
 updateDb
   :: FirebaseData t
   => FireState t -> FbId -> Maybe t -> IO ()
@@ -89,17 +130,18 @@ logRecordUpdate action itm = logD $ cs $ show itm ++ " (" ++ show action ++ ")"
 -- nb: the Stream ByteSting returns 'chunks' that appear to correspond directly to actions
 -- ... which makes the conversion from one stream to the other a little unnecessary, but safer?
 transformStream
-  :: (FbHttpM m e r, HasFirebase r, FirebaseData t)
-  => InputStream ByteString -> m (InputStream (Event t))
+  :: FirebaseData t
+  => InputStream ByteString -> IO (InputStream (Event t))
 transformStream i =
-  liftIO $ bytesToStreamEvents i >>= streamEventsToDataEvents >>= Streams.concatLists >>=
-  Streams.mapM fetchUpdates
+  bytesToStreamEvents i >>= streamEventsToDataEvents >>= Streams.concatLists
 
+-- logStreamData >>=
 logStreamData :: InputStream ByteString -> IO ()
 logStreamData i = Streams.peek i >>= (maybe (return ()) BSC.putStrLn)
 
 -- converts byte stream into raw stream-event event types
-bytesToStreamEvents :: FirebaseData t
+bytesToStreamEvents
+  :: FirebaseData t
   => InputStream ByteString -> IO (InputStream (StreamEvent t))
 bytesToStreamEvents i = logStreamData i >> parserToInputStream parser i
   where
@@ -107,23 +149,23 @@ bytesToStreamEvents i = logStreamData i >> parserToInputStream parser i
 
 -- converts raw stream-event event types into our data events (add/delete/update)
 streamEventsToDataEvents
-  ::  FirebaseData t
+  :: FirebaseData t
   => InputStream (StreamEvent t) -> IO (InputStream [Event t])
 streamEventsToDataEvents = Streams.map streamEventToDataEvent
 
 -- need to get the latest data for any update event on an item
 fetchUpdates
   :: (FbHttpM m e r, HasFirebase r, FirebaseData t)
-  => Event t -> m (Event t)
-fetchUpdates e@(INVALID _) = return e
-fetchUpdates evnt =
+  => String -> Event t -> m (Event t)
+fetchUpdates loc e@(INVALID _) = return e
+fetchUpdates loc evnt =
   case action evnt of
-    UPDATE
-    -- because we could have a Nothing item, the typeclass needs to be defined as it is with a (Maybe t) -> FB.Location... what is a better way?
-     -> do
-      let loc = fbLoc (Just evnt)
-      itm <- FB.get (fromJust loc) Nothing
-      return $ evnt { item = Just itm }
+    UPDATE -> do
+      itm <- FB.get loc Nothing
+      return $
+        evnt
+        { item = Just itm
+        }
     _ -> return evnt
 
 streamEventToDataEvent
