@@ -31,14 +31,14 @@ import Control.Monad.Trans (MonadIO)
 import qualified Data.Text.Internal as T
 
 class FirebaseContext a where
-  fbCtx :: Maybe a -> Location
+  fbCtx :: a -> Location
 
 class (Show a, ToJSON a, FromJSON a, FirebaseContext a) =>
       FirebaseData a  where
-  getId :: Maybe a -> Maybe FirebaseId
+  getId :: a -> Maybe FirebaseId
   setId :: a -> Text -> a
   genId :: a -> IO (Maybe FirebaseId)
-  fbLoc :: Maybe a -> Maybe Location
+  fbLoc :: a -> Maybe Location
   getId _ = Nothing
   fbLoc a = (fbCtx a <>) . cs <$> getId a
 
@@ -93,19 +93,19 @@ instance ToJSON (Event t) where
 instance FromJSON (Event t) where
   parseJSON _ = Ap.empty
 
-instance (FirebaseData t, FirebaseContext t) => FirebaseContext (Event t) where
-  fbCtx (Just Event {item = itm}) = fbCtx itm
-  fbCtx _ = "/"
+-- instance (FirebaseData t, FirebaseContext t) => FirebaseContext (Event t) where
+--   fbCtx Event {item = itm} = fbCtx itm
+--   fbCtx _ = "/"
 
--- we need this to derive full location from an event for event data when item=Nothing::Maybe t
-instance FirebaseData t =>
-         FirebaseData (Event t) where
-  getId (Just Event {id = i}) = Just i
-  getId _ = Nothing
-  setId a i =
-    a
-      { Network.Google.Firebase.Types.id = i }
-  genId _ = return Nothing
+-- -- we need this to derive full location from an event for event data when item=Nothing::Maybe t
+-- instance FirebaseData t =>
+--          FirebaseData (Event t) where
+--   getId (Just Event {id = i}) = Just i
+--   getId _ = Nothing
+--   setId a i =
+--     a
+--       { Network.Google.Firebase.Types.id = i }
+--   genId _ = return Nothing
 
 instance ToJSON DataChangeType
 
@@ -129,7 +129,7 @@ pAddOne v = do
       , changedData = mkData itm
       , changeAction = ADD
       } where
-  mkData d = Just $ fromList $ L.map (\(i,d')->(cs $ fromJust i,d')) $ L.filter (\(i,_)->isJust i) [(getId (Just d), d)]
+  mkData d = Just $ fromList $ L.map (\(i,d')->(cs $ fromJust i,d')) $ L.filter (\(i,_)->isJust i) [(getId d, d)]
 
 pAddAll :: FirebaseData t => Object -> Parser (StreamEventData t)
 --pAddAll v | trace (show v) False = undefined

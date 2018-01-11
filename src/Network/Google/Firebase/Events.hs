@@ -33,11 +33,11 @@ import Control.Monad.Reader
 -- connect to firebase server over https, and convert the event-stream to a Stream, saving it in the state
 listen
   :: FirebaseData t
-  => String -> String -> String -> FireState t -> IO ()
-listen fbServer fbDataKey loc' st =
+  => String -> String -> FireState t -> IO ()
+listen fbServer fbDataKey st =
   withOpenSSL $
   do ctx <- baselineContextSSL
-     let loc = loc' ++ ".json?auth="
+     let loc = (fbCtx $ unwrap st) ++ ".json?auth="
      logD $ cs $ "Listening on firebase location for updates: " <> loc
      withConnection (openConnectionSSL ctx (cs $ fbServer) 443) $
        (\c -> do
@@ -53,7 +53,7 @@ listen fbServer fbDataKey loc' st =
               -> do
                stream' <- transformStream stream
                -- fetch data for any UPDATE events in the stream and save to the state
-               Streams.mapM_ (\t -> runF fbServer fbDataKey (fetchUpdates loc t)) stream'
+               _ <- Streams.mapM_ (\t -> runF fbServer fbDataKey (fetchUpdates loc t)) stream'
                let loop = do
                      mEvnt :: Maybe (Event t) <- Streams.read stream'
                      case mEvnt of
@@ -70,6 +70,9 @@ listen fbServer fbDataKey loc' st =
                        Nothing -> logW "Nothing encountered in stream. EOS."
                loop))
      logW "Firebase connection closed."
+
+unwrap :: FirebaseData t => FireState t -> t
+unwrap _ = undefined::t
 
 runF :: String -> String -> FirebaseM t -> IO (Either Nano.HttpError t)
 runF url tok a = do

@@ -1,13 +1,9 @@
 module Network.Google.Firebase.Util where
 
-import Data.Time.Clock.POSIX
 import Prelude hiding (log)
 import Data.String.Conversions
 import System.IO
 import Data.ByteString.Char8 as BS
-
-getTimestamp :: IO Int
-getTimestamp = round `fmap` getPOSIXTime
 
 rightToMaybe :: Either b a -> Maybe a
 rightToMaybe = either (const Nothing) Just
