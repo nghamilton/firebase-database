@@ -8,6 +8,10 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# language DataKinds #-}
+{-# language FlexibleContexts #-}
+{-# language ScopedTypeVariables #-}
+{-# language TypeFamilies #-}
 
 module Network.Google.Firebase.Types where
 
@@ -29,18 +33,19 @@ import Control.Monad.Reader  (MonadReader)
 import Control.Monad.Except (MonadError)
 import Control.Monad.Trans (MonadIO)
 import qualified Data.Text.Internal as T
+import Data.Proxy
+import GHC.TypeLits
 
-class FirebaseContext a where
-  fbCtx :: a -> Location
+type family FirebaseContext a :: Symbol
 
-class (Show a, ToJSON a, FromJSON a, FirebaseContext a) =>
+class (Show a, ToJSON a, FromJSON a, KnownSymbol (FirebaseContext a)) =>
       FirebaseData a  where
   getId :: a -> Maybe FirebaseId
   setId :: a -> Text -> a
   genId :: a -> IO (Maybe FirebaseId)
   fbLoc :: a -> Maybe Location
   getId _ = Nothing
-  fbLoc a = (fbCtx a <>) . cs <$> getId a
+  fbLoc a = (symbolVal (Proxy::Proxy (FirebaseContext a)) <>) . cs <$> getId a
 
 type FirebaseId = Text
 
@@ -92,20 +97,6 @@ instance ToJSON (Event t) where
 
 instance FromJSON (Event t) where
   parseJSON _ = Ap.empty
-
--- instance (FirebaseData t, FirebaseContext t) => FirebaseContext (Event t) where
---   fbCtx Event {item = itm} = fbCtx itm
---   fbCtx _ = "/"
-
--- -- we need this to derive full location from an event for event data when item=Nothing::Maybe t
--- instance FirebaseData t =>
---          FirebaseData (Event t) where
---   getId (Just Event {id = i}) = Just i
---   getId _ = Nothing
---   setId a i =
---     a
---       { Network.Google.Firebase.Types.id = i }
---   genId _ = return Nothing
 
 instance ToJSON DataChangeType
 

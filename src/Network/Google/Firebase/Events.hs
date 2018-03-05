@@ -1,6 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# language DataKinds #-}
+{-# language FlexibleContexts #-}
+{-# language ScopedTypeVariables #-}
+{-# language TypeFamilies #-}
 
 module Network.Google.Firebase.Events where
 
@@ -29,15 +33,17 @@ import qualified Data.HashMap.Lazy as HM
 import Data.List.Split
 import Control.Monad.Except
 import Control.Monad.Reader
+import Data.Proxy
+import GHC.TypeLits
 
 -- connect to firebase server over https, and convert the event-stream to a Stream, saving it in the state
 listen
-  :: FirebaseData t
+  :: (KnownSymbol (FirebaseContext t), FirebaseData t)
   => String -> String -> FireState t -> IO ()
 listen fbServer fbDataKey st =
   withOpenSSL $
   do ctx <- baselineContextSSL
-     let loc = (fbCtx $ unwrap st) ++ ".json?auth="
+     let loc = fbCtx st ++ ".json?auth="
      logD $ cs $ "Listening on firebase location for updates: " <> loc
      withConnection (openConnectionSSL ctx (cs $ fbServer) 443) $
        (\c -> do
@@ -71,8 +77,8 @@ listen fbServer fbDataKey st =
                loop))
      logW "Firebase connection closed."
 
-unwrap :: FirebaseData t => FireState t -> t
-unwrap _ = undefined::t
+fbCtx :: forall a. KnownSymbol (FirebaseContext a) => FireState a -> String
+fbCtx _ = symbolVal (Proxy :: Proxy (FirebaseContext a))
 
 runF :: String -> String -> FirebaseM t -> IO (Either Nano.HttpError t)
 runF url tok a = do
