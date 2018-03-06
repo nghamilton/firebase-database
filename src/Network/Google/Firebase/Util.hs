@@ -53,9 +53,6 @@ logE = log "ERROR"
 logWTF :: ByteString -> IO ()
 logWTF = log "WTF"
 
---fetch loc = get loc Nothing
---persist = post (fbCtx (Just d)) fbData
-
 fbCtxFromState :: forall a. KnownSymbol (FirebaseContext a) => FireState a -> String
 fbCtxFromState _ = symbolVal (Proxy :: Proxy (FirebaseContext a))
 
@@ -108,7 +105,7 @@ persist' d = do
           let loc = fbCtx d <> cs newId
           put loc fbData
           return newId
-        Nothing -> undefined
+        Nothing -> cs <$> post (fbCtx d) fbData -- if no ID then we get FB to make us one
 
 data FBEnv = FBEnv
   { fbInstance :: Firebase
