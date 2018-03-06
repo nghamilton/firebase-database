@@ -12,7 +12,6 @@ import Network.Google.Firebase as FB
 import Network.Google.Firebase.Types
 import Network.Google.Firebase.Util
 
-import Control.Lens.Lens
 import System.IO.Streams.Attoparsec.ByteString
 import Control.Applicative
 import Data.ByteString
@@ -26,14 +25,10 @@ import Data.String.Conversions
 import Data.Maybe
 import qualified Data.List as L hiding (lookup)
 import Network.Http.Client hiding (PUT, PATCH, DELETE)
-import Network.HTTP.Nano as Nano hiding (http, GET, PUT, PATCH)
 import OpenSSL
 import Control.Concurrent
 import qualified Data.HashMap.Lazy as HM
 import Data.List.Split
-import Control.Monad.Except
-import Control.Monad.Reader
-import Data.Proxy
 import GHC.TypeLits
 
 -- connect to firebase server over https, and convert the event-stream to a Stream, saving it in the state
@@ -43,7 +38,7 @@ listen
 listen fbServer fbDataKey st =
   withOpenSSL $
   do ctx <- baselineContextSSL
-     let loc = fbCtx st ++ ".json?auth="
+     let loc = fbCtxFromState st ++ ".json?auth="
      logD $ cs $ "Listening on firebase location for updates: " <> loc
      withConnection (openConnectionSSL ctx (cs $ fbServer) 443) $
        (\c -> do
@@ -76,47 +71,6 @@ listen fbServer fbDataKey st =
                        Nothing -> logW "Nothing encountered in stream. EOS."
                loop))
      logW "Firebase connection closed."
-
-fbCtx :: forall a. KnownSymbol (FirebaseContext a) => FireState a -> String
-fbCtx _ = symbolVal (Proxy :: Proxy (FirebaseContext a))
-
-runF :: String -> String -> FirebaseM t -> IO (Either Nano.HttpError t)
-runF url tok a = do
-  env <- fbEnv url tok
-  runExceptT $ flip runReaderT env a
-
-fbEnv :: String -> String -> IO FBEnv
-fbEnv url tok = do
-  let fb = FB.Firebase tok url
-  mgr <- Nano.tlsManager
-  let httpc = Nano.HttpCfg mgr
-  return $ FBEnv fb httpc
-
-data FBEnv = FBEnv
-  { fbInstance :: FB.Firebase
-  , fbHttpCfg :: Nano.HttpCfg
-  }
-
-instance Nano.HasHttpCfg FBEnv where
-  httpCfg =
-    lens
-      fbHttpCfg
-      (\te h ->
-          te
-          { fbHttpCfg = h
-          })
-
-instance FB.HasFirebase FBEnv where
-  firebase =
-    lens
-      fbInstance
-      (\te f ->
-          te
-          { fbInstance = f
-          })
-
---todo supply this to each method call, or create monad for us
-type FirebaseM = ReaderT FBEnv (ExceptT Nano.HttpError IO)
 
 updateDb
   :: FirebaseData t

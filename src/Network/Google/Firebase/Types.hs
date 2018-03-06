@@ -44,8 +44,10 @@ class (Show a, ToJSON a, FromJSON a, KnownSymbol (FirebaseContext a)) =>
   setId :: a -> Text -> a
   genId :: a -> IO (Maybe FirebaseId)
   fbLoc :: a -> Maybe Location
+  fbCtx :: a -> Location
   getId _ = Nothing
-  fbLoc a = (symbolVal (Proxy::Proxy (FirebaseContext a)) <>) . cs <$> getId a
+  fbCtx _ = symbolVal (Proxy::Proxy (FirebaseContext a))
+  fbLoc a = (fbCtx a <>) . cs <$> getId a
 
 type FirebaseId = Text
 
@@ -168,6 +170,8 @@ pUpdateOrDelete v = do
   where
     isFieldDelete p = L.length (wordsBy (== '/') p) >= 2
 
+data FirebaseError = CommsError String | InvalidLocation
+  deriving (Show, Generic, Eq)
 
 -- todo - create new method to accumulate error messages between alternative parser attempts so if the last parser fails it will return all error messages (i.e all Lefts concat'ed)
 -- (<|>) :: Parser a -> Parser a -> Parser a
