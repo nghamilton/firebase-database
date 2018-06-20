@@ -6,5 +6,4 @@ cabal.sandbox.config
 .codex.tags
 profile.log
 *.tags
-test-firebase-data.json
-firebase_test_stream_qr.data
+test-previous
