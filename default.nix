@@ -9,6 +9,6 @@ let
   };
   nano-http = noHaddock (haskellPackages'.callPackage ./nano-http.nix {});
 in
-  haskellPackages'.callPackage ./firebase.nix {
+  haskellPackages'.callPackage ./firebase-database.nix {
   nano-http = nano-http;
 }

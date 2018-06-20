@@ -6,7 +6,7 @@
 , text-show, time, unordered-containers, uuid, wai, warp
 }:
 mkDerivation {
-  pname = "firebase";
+  pname = "firebase-database";
   version = "0.0.1";
   src = ./.;
   libraryHaskellDepends = [
@@ -23,7 +23,7 @@ mkDerivation {
     string-conversions text text-show time unordered-containers uuid
   ];
   benchmarkHaskellDepends = [ base criterion ];
-  homepage = "https://github.com/nghamilton/firebase";
+  homepage = "https://github.com/nghamilton/firebase-database";
   description = "Google Firebase Database API";
   license = stdenv.lib.licenses.bsd3;
 }
