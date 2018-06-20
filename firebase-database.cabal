@@ -1,21 +1,18 @@
 name:                firebase-database
 version:             0.0.1
 synopsis:            Google Firebase Database SDK
-homepage:            https://github.com/nghamilton/firebase-database
 license:             OtherLicense
 license-file:        LICENSE
 author:              Nick Hamilton
 maintainer:          Nick Hamilton <projects@nickhamilton.ninja>
-category:            Web 
 build-type:          Simple
 extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
-Copyright:           (c) 2018 Nick Hamilton 
-Homepage:            https://github.com/nghamilton/firebase-database
+copyright:           (c) 2018 Nick Hamilton 
+homepage:            https://github.com/nghamilton/firebase-database
 bug-reports:         https://github.com/nghamilton/firebase-database/issues
-Stability:           stable
+stability:           alpha
 category:            Network, Google, Cloud, Database
-Build-type:          Simple
 description:
     SDK for connecting to Google's Firebase Database, using Firebase REST endpoints. 
     .
@@ -55,7 +52,7 @@ library
 test-suite tests
   default-extensions:  OverloadedStrings
                      , DuplicateRecordFields
-  ghc-options:         -fhpc
+  ghc-options:        
   type:                exitcode-stdio-1.0
   main-is:             Spec.hs
   hs-source-dirs:      src,test
